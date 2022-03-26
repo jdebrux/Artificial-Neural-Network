@@ -29,18 +29,17 @@ class MLP:
                 for j, perceptron in enumerate(layer):
                     if new_inputs:
                         perceptron.inputs = new_inputs
-                    
                     incoming_weights = []
                     for ar in prev_weights:
                         incoming_weights.append(ar[j])
                     #weights . inputs + bias 
-                    if(i==len(self.layers)-2):
-                        print(perceptron.bias)
+                    if(i==len(self.layers)-1):
+                        print("Bias:",perceptron.bias)
                     s = sum(np.multiply(perceptron.inputs, incoming_weights)) + perceptron.bias
                     new_activation = self.sigmoid(s)
                     perceptron.output = new_activation
                     output.append(new_activation)
-                    print("Output:",output)
+                    #print("Output:",output)
                 
         #print(output)
         return output
@@ -64,11 +63,12 @@ class MLP:
                 for j in range(len(self.layers[i][0].weights)):
                     deltas.append(self.layers[i+1][j].delta) #get deltas of next layer's perceptrons
                 #print("Deltas:",deltas)
-                for perceptron in self.layers[i]:
+            for perceptron in self.layers[i]:
+                if i<len(self.layers)-1:
                     weight_change = [x*p for x in deltas]
                     weight_change = [x*perceptron.output for x in weight_change]
                     perceptron.weights += weight_change
-                    perceptron.bias += p*perceptron.delta #update bias using wi,j = wi,j + p*δj*ui
+                perceptron.bias += p*perceptron.delta #update bias using wi,j = wi,j + p*δj*ui
                     
             
     def sigmoid(self, x):
