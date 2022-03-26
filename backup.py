@@ -1,5 +1,4 @@
 import numpy as np
-import csv
 from random import random
 
 class Perceptron:
@@ -20,34 +19,34 @@ class MLP:
     def forwardProp(self):
         output = []
         for i, layer in enumerate(self.layers):
-            new_inputs = output
-            output = []
             print("I:",i)
             if i!=0:
                 #get weights of previous layer's perceptrons
                 prev_weights = [self.layers[i-1][j].weights for j in range(len(self.layers[i-1]))]
                 for j, perceptron in enumerate(layer):
-                    if new_inputs:
-                        perceptron.inputs = new_inputs
-                    
                     incoming_weights = []
                     for ar in prev_weights:
                         incoming_weights.append(ar[j])
                     #weights . inputs + bias 
-                    if(i==len(self.layers)-2):
-                        print(perceptron.bias)
+                    #print("IN",perceptron.inputs)
+                    print(perceptron.bias)
                     s = sum(np.multiply(perceptron.inputs, incoming_weights)) + perceptron.bias
                     new_activation = self.sigmoid(s)
                     perceptron.output = new_activation
                     output.append(new_activation)
-                    print("Output:",output)
+                    print("Output:",new_activation)
                 
         #print(output)
         return output
 
-    def backwardProp(self, correct):
+    def backwardProp(self):
+        correct=0.5
         outputs = []
         for i, layer in reversed(list(enumerate(self.layers))):
+##            activations=[]
+##            for perceptron in self.layers[i-1]: #get previous layers outputs
+##                activations.append(perceptron.output)
+##                delta = error * self.sigmoidDerivative(perceptron.output)
             for perceptron in layer:
                 f_prime = perceptron.output*(1.0-perceptron.output) #sigmoid derivative
                 delta = (correct-perceptron.output)*f_prime
@@ -75,38 +74,29 @@ class MLP:
         y = 1.0 / (1 + np.exp(-x))
         return y
 
-    def train(self, dataset, epochs, p):
-        for epoch in range(epochs):   # repeat for N epochs
-            for i, row in enumerate(dataset):  # for every row
-                self.forwardProp()
-                self.backwardProp(1)   # correct value = last column in input data
-                self.gradientDescent(p)
-                if i != len(dataset)-1:
-                    new_inputs = dataset[i+1]
-                # print("new inputs:", new_inputs)
-                for j, perceptron in enumerate(self.layers[0]):
-                    perceptron.inputs = [new_inputs[j]]
-                    # print("neuron inputs:", neuron.inputs)
-            print("epochs:", str(epoch+1))
-        
-if __name__ == "__main__":
-    file = open('test_data.csv', 'r')
-    data_reader = csv.reader(file, delimiter=',')
-    dataset_str = [row[1:9] for row in data_reader]   # only number values from table
-    dataset_numstr = dataset_str[2:98]   # remove 98 when passing cleaned data
-    dataset = [[float(dataset_numstr[i][j]) for j in range(len(dataset_numstr[i]))]   # convert all str columns to float
-           for i in range(len(dataset_numstr))]
+    @staticmethod
+    def train(self, mlp, dataset, epochs, learning_rate):
+        for i in range(epochs):
+            
+            pass
 
-    nHidden = int(input("Enter the number of hidden neurons:")) #get number of hidden nodes
-    
-    input_layer = [Perceptron([column], nHidden) for column in dataset[0]] #initialise input layer
-    hidden_layer = [Perceptron([0]*len(input_layer), 1) for k in range(nHidden)] #initialise hidden layer
-    output_layer = [Perceptron([0]*len(hidden_layer), 1)] #initialise output layer
-    
-    # create network
-    mlp = MLP([input_layer, hidden_layer, output_layer])
-    #train
-    mlp.train(dataset,1000,0.5)
-    # make a prediction:
-    output = mlp.forwardProp()[-1]    # get output from output layer
-    print("Next predicted mean daily flow at Skelton:", Calculator.destandardise(output))
+if __name__ == "__main__":
+    n1 = Perceptron([1],3)
+    n2 = Perceptron([2],3)
+    n3 = Perceptron([3, 3],1)
+    n4 = Perceptron([2, 2],1)
+    n5 = Perceptron([2, 2],1)
+    n6 = Perceptron([2, 2, 2],1)
+
+    l1 = [n1, n2]
+    l2 = [n3, n4, n5]
+    l3 = [n6]
+
+    mlp = MLP([l1, l2, l3])
+
+    #no target specified - implement and use error in back prop
+    epochs = 500
+    for i in range(epochs):
+        mlp.forwardProp()
+        mlp.backwardProp()
+        mlp.gradientDescent(0.5)
