@@ -1,6 +1,7 @@
 import numpy as np
 import csv
 from random import random
+import matplotlib.pyplot as plt
 
 """
 The perceptron class defines the storage of data for a given perceptron in the neural network.
@@ -54,17 +55,14 @@ class MLP:
         return new_activation
 
     def backwardProp(self, correct):
-        outputs = []
         error=0.0
         for i, layer in reversed(list(enumerate(self.layers))): #loop through each layer in the MLP in reverse
             for perceptron in layer: #loop through each perceptron in the current layer
                 f_prime = perceptron.output*(1.0-perceptron.output) #sigmoid derivative
                 delta = (correct-perceptron.output)*f_prime #calculate delta
                 perceptron.delta = delta
-                #print(i,"|",perceptron.output)
-                #print("ERROR",correct-perceptron.output)
                 if i==2:
-                    error = perceptron.output-correct
+                    error = correct-perceptron.output
         return error
 
     def gradientDescent(self, p):
@@ -87,20 +85,36 @@ class MLP:
         return y
 
     def train(self, dataset, epochs, p):
+        errors=[]
+        rmse_errors=[]
+        
         for epoch in range(epochs):   #loop for given number of epochs
             for i, row in enumerate(dataset):  #loop through every row in the data set
                 correct = row[4] #define correct value as the value for Skelton on the proceeding day
                 prediction = self.forwardProp() #perform forward propogation of the network
                 error = self.backwardProp(correct)  #perform backward propogation on the network
-                if i==len(dataset)-1: #only output for final prediction made
-                      print("Prediction:",prediction)
-                      print("Error: ",error)
+                if i==len(dataset)-1:
+                    errors.append(error)
+                    rmse = self.rmse(errors)
+                    rmse_errors.append(rmse)
                 self.gradientDescent(p) #update weights and biases
                 if i != len(dataset)-1:
                     new_inputs = dataset[i+1]
                 for j, perceptron in enumerate(self.layers[0]): #define inputs for each 
                     perceptron.inputs = [new_inputs[j]]
             #print("Epoch:", str(epoch+1))
+        x=[i for i in range(len(rmse_errors))]
+        plt.plot(x, rmse_errors)
+        plt.show()
+
+    def rmse(self, errors):
+        n=len(errors)
+        errors = sum(errors)
+        errors = errors/n
+        errors = np.sqrt(errors)
+        return errors
+        
+        
         
 if __name__ == "__main__":
     file = open('data.csv', 'r')
@@ -118,8 +132,7 @@ if __name__ == "__main__":
     # create network
     mlp = MLP([input_layer, hidden_layer, output_layer])
     #train
-    print(len(mlp.layers[0]))
-    mlp.train(dataset,1000,0.5)
+    mlp.train(dataset,10000,0.2)
     # make a prediction:
     output = mlp.forwardProp()   # get output from output layer
     #print("Next predicted mean daily flow at Skelton:", Calculator.destandardise(output))
