@@ -3,6 +3,8 @@ import csv
 from random import random
 import matplotlib.pyplot as plt
 
+np.random.seed()
+
 """
 The perceptron class defines the storage of data for a given perceptron in the neural network.
 The perceptrons will be used to build up each layer and thus form a Multi Layer Perceptron.
@@ -40,18 +42,14 @@ class MLP:
                     #loop through each set of previous weights and find the weights correlating to the current perceptron
                     for ar in prev_weights: 
                         incoming_weights.append(ar[j])
+                    #print("Perceptron Inputs",perceptron.inputs,"j:",j," i:",i)
                     s = sum(np.multiply(perceptron.inputs, incoming_weights)) + perceptron.bias #weights . inputs + bias 
                     new_activation = self.sigmoid(s) #apply the sigmoid function
-                    #if i==1:
-                        #print("Old perceptron:", perceptron.output)
                     perceptron.output = new_activation
-                    #if i==1:
-                        #print("New perceptron:", perceptron.output)
                     output.append(new_activation)
             else:
                 for j,perceptron in enumerate(layer):
-                    perceptron.output = perceptron.inputs[0]
-                
+                    output.append(perceptron.inputs[0])
         return new_activation
 
     def backwardProp(self, correct):
@@ -63,6 +61,7 @@ class MLP:
                 perceptron.delta = delta
                 if i==2:
                     error = correct-perceptron.output
+                    error = error*error
         return error
 
     def gradientDescent(self, p):
@@ -85,16 +84,15 @@ class MLP:
         return y
 
     def train(self, dataset, epochs, p):
-        errors=[]
         rmse_errors=[]
-        
         for epoch in range(epochs):   #loop for given number of epochs
+            errors=[]
             for i, row in enumerate(dataset):  #loop through every row in the data set
                 correct = row[4] #define correct value as the value for Skelton on the proceeding day
                 prediction = self.forwardProp() #perform forward propogation of the network
                 error = self.backwardProp(correct)  #perform backward propogation on the network
+                errors.append(error)
                 if i==len(dataset)-1:
-                    errors.append(error)
                     rmse = self.rmse(errors)
                     rmse_errors.append(rmse)
                 self.gradientDescent(p) #update weights and biases
@@ -102,37 +100,73 @@ class MLP:
                     new_inputs = dataset[i+1]
                 for j, perceptron in enumerate(self.layers[0]): #define inputs for each 
                     perceptron.inputs = [new_inputs[j]]
-            #print("Epoch:", str(epoch+1))
-        x=[i for i in range(len(rmse_errors))]
-        plt.plot(x, rmse_errors)
-        plt.show()
+        return rmse_errors
 
+    def predict(self, dataset):
+        predictions=[]
+        correct_values=[]
+        for i, row in enumerate(dataset):
+            correct_values.append(row[4])
+            predictions.append(self.forwardProp())
+            if i != len(dataset)-1:
+                new_inputs = dataset[i+1]
+            for j, perceptron in enumerate(self.layers[0]): #define inputs for each
+                perceptron.inputs = [new_inputs[j]]
+        plt.plot(predictions)
+        plt.plot(correct_values)
+        plt.legend(["Predictions","Correct Values"])
+        plt.title("Actual vs Modelled Values for Skelton Mean Daily Flow")
+        plt.show()
+        
     def rmse(self, errors):
-        n=len(errors)
-        errors = sum(errors)
-        errors = errors/n
-        errors = np.sqrt(errors)
-        return errors
-        
-        
+        return np.sqrt(sum(errors)/len(errors))    
         
 if __name__ == "__main__":
-    file = open('data.csv', 'r')
-    data_reader = csv.reader(file, delimiter=',')
-    dataset_str = [row[0:5] for row in data_reader]   # only number values from table
-    dataset = [[float(dataset_str[i][j]) for j in range(len(dataset_str[i]))]   # convert all str columns to float
-           for i in range(len(dataset_str))]
+    # train data
+    train_file = open('train.csv', 'r')
+    train_reader = csv.reader(train_file, delimiter=',')
+    train_str = [row[0:5] for row in train_reader]  # only number values from table
+    train_data = [[float(train_str[i][j]) for j in range(len(train_str[i]))]  # convert all str columns to float
+                  for i in range(len(train_str))]
+
+    # test data
+    test_file = open('test.csv', 'r')
+    test_reader = csv.reader(test_file, delimiter=',')
+    test_str = [row[0:5] for row in test_reader]  # only number values from table
+    test_data = [[float(test_str[i][j]) for j in range(len(test_str[i]))]  # convert all str columns to float
+                 for i in range(len(test_str))]
+
+    # validation data
+    validation_file = open('validation.csv', 'r')
+    validation_reader = csv.reader(validation_file, delimiter=',')
+    validation_str = [row[0:5] for row in validation_reader]  # only number values from table
+    validation_data = [[float(validation_str[i][j]) for j in range(len(validation_str[i]))]  # convert all str columns to float
+                       for i in range(len(validation_str))]
 
     nHidden = int(input("Enter the number of hidden neurons:")) #get number of hidden nodes
     
-    input_layer = [Perceptron([dataset[0][i]], nHidden) for i in range(len(dataset[0])-1)] #initialise input layer
+    input_layer = [Perceptron([train_data[0][i]], nHidden) for i in range(len(train_data[0])-1)] #initialise input layer
     hidden_layer = [Perceptron([0]*len(input_layer), 1) for k in range(nHidden)] #initialise hidden layer
     output_layer = [Perceptron([0]*len(hidden_layer), 1)] #initialise output layer
     
     # create network
     mlp = MLP([input_layer, hidden_layer, output_layer])
+    epochs=10
+    p=0.01
     #train
-    mlp.train(dataset,10000,0.2)
-    # make a prediction:
-    output = mlp.forwardProp()   # get output from output layer
-    #print("Next predicted mean daily flow at Skelton:", Calculator.destandardise(output))
+    train_errors = mlp.train(train_data,epochs,p)
+    test_errors = mlp.train(test_data,epochs,p)
+    x = [i for i in range(epochs)]
+    plt.plot(x,train_errors)
+    plt.title("RMSE Errors for Training Data")
+    plt.xlabel("Number of Epochs (n)")
+    plt.ylabel("RMSE Error")
+    plt.show()
+
+    plt.plot(x,test_errors)
+    plt.title("RMSE Errors for Test Data")
+    plt.xlabel("Number of Epochs (n)")
+    plt.ylabel("RMSE Error")
+    plt.show()
+    
+    mlp.predict(validation_data)
