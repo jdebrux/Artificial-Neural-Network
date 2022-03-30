@@ -5,12 +5,11 @@ import matplotlib.pyplot as plt
 
 np.random.seed()
 
-"""
-The perceptron class defines the storage of data for a given perceptron in the neural network.
-The perceptrons will be used to build up each layer and thus form a Multi Layer Perceptron.
-"""
 class Perceptron:
-
+    """
+    The perceptron class defines the storage of data for a given perceptron in the neural network.
+    The perceptrons will be used to build up each layer and thus form a Multi Layer Perceptron.
+    """
     def __init__(self, inputs, nOut):
         self.inputs = inputs
         self.weights = np.random.rand(nOut)
@@ -18,15 +17,18 @@ class Perceptron:
         self.output = 0.0
         self.delta = 0.0
         self.db = 0.0
-"""
-The MLP class represents a Multi-Layer Perceptron, and the methods required to train it.
-"""
-class MLP:
 
+class MLP:
+    """
+    The MLP class represents a Multi-Layer Perceptron, and the methods required to train it.
+    """
     def __init__(self, layers):
         self.layers = layers
 
     def forwardProp(self):
+        """
+        The forward propagation function works by feeding data forward through the network. The initial input layer will take inputs from the data set, before feeding their output to the hidden layer. 
+        """
         output = []
         for i, layer in enumerate(self.layers): #loop through each layer in the MLP
             #store the inputs for a given layer as the outputs of the previous layer
@@ -53,29 +55,32 @@ class MLP:
         return new_activation
 
     def backwardProp(self, correct):
+        """
+        The backpropagation algorithm is used to minimise the error function by adjusting the network’s weights and biases.
+        """
         error=0.0
         for i, layer in reversed(list(enumerate(self.layers))): #loop through each layer in the MLP in reverse
             for perceptron in layer: #loop through each perceptron in the current layer
                 f_prime = perceptron.output*(1.0-perceptron.output) #sigmoid derivative
                 delta = (correct-perceptron.output)*f_prime #calculate delta
                 perceptron.delta = delta
-                if i==2:
+                if i==2: #store error for output layer
                     error = correct-perceptron.output
                     error = error*error
         return error
 
     def gradientDescent(self, p):
-        for i in range(len(self.layers)):
+        for i in range(len(self.layers)): #loop through network layers 
             #print("i:",i)
-            if i<len(self.layers)-1:
+            if i<len(self.layers)-1: #check if in the end layer
                 deltas = []
                 for j in range(len(self.layers[i][0].weights)):
                     deltas.append(self.layers[i+1][j].delta) #get deltas of next layer's perceptrons
-            for perceptron in self.layers[i]:
+            for perceptron in self.layers[i]: #loop through perceptrons in the current layer
                 if i<len(self.layers)-1:
-                    weight_change = [x*p for x in deltas]
-                    weight_change = [x*perceptron.output for x in weight_change]
-                    perceptron.weights += weight_change
+                    weight_change = [x*p for x in deltas] #multiply deltas by learning rate
+                    weight_change = [x*perceptron.output for x in weight_change] #multiply by output
+                    perceptron.weights += weight_change #apply weight change
                 perceptron.bias += p*perceptron.delta #update bias using wi,j = wi,j + p*δj*ui
             
     def sigmoid(self, x):
@@ -90,27 +95,28 @@ class MLP:
                 correct = row[4] #define correct value as the value for Skelton on the proceeding day
                 prediction = self.forwardProp() #perform forward propogation of the network
                 error = self.backwardProp(correct)  #perform backward propogation on the network
-                errors.append(error)
-                if i==len(dataset)-1:
-                    rmse = self.rmse(errors)
-                    rmse_errors.append(rmse)
+                errors.append(error) #store errors for a given epoch
+                if i==len(dataset)-1: #check if at the end the dataset and therefore epoch
+                    rmse = self.rmse(errors) #calculate root mean squared error
+                    rmse_errors.append(rmse) #store root mean squared error for each epoch
                 self.gradientDescent(p) #update weights and biases
                 if i != len(dataset)-1:
-                    new_inputs = dataset[i+1]
-                for j, perceptron in enumerate(self.layers[0]): #define inputs for each 
-                    perceptron.inputs = [new_inputs[j]]
+                    new_inputs = dataset[i+1] #assign new inputs as next row in data set
+                for j, perceptron in enumerate(self.layers[0]): 
+                    perceptron.inputs = [new_inputs[j]] #assign new inputs for each row as the next row in the dataset
         return rmse_errors
 
     def predict(self, dataset):
         predictions=[]
         correct_values=[]
-        for i, row in enumerate(dataset):
-            correct_values.append(row[4])
-            predictions.append(self.forwardProp())
-            if i != len(dataset)-1:
-                new_inputs = dataset[i+1]
-            for j, perceptron in enumerate(self.layers[0]): #define inputs for each
+        for i, row in enumerate(dataset): #loop through each row in the dataset
+            correct_values.append(row[4]) #store expected values
+            predictions.append(self.forwardProp()) #store predicted values
+            if i != len(dataset)-1: 
+                new_inputs = dataset[i+1] #assign new inputs for each row as the next row in the dataset
+            for j, perceptron in enumerate(self.layers[0]): 
                 perceptron.inputs = [new_inputs[j]]
+        #plot data
         plt.plot(predictions)
         plt.plot(correct_values)
         plt.legend(["Predictions","Correct Values"])
