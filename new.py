@@ -5,11 +5,12 @@ import matplotlib.pyplot as plt
 
 np.random.seed()
 
-"""
-The perceptron class defines the storage of data for a given perceptron in the neural network.
-The perceptrons will be used to build up each layer and thus form a Multi Layer Perceptron.
-"""
 class Perceptron:
+    
+    """
+    The perceptron class defines the storage of data for a given perceptron in the neural network.
+    The perceptrons will be used to build up each layer and thus form a Multi Layer Perceptron.
+    """
 
     def __init__(self, inputs, nOut):
         self.inputs = inputs
@@ -18,10 +19,11 @@ class Perceptron:
         self.output = 0.0
         self.delta = 0.0
         self.db = 0.0
-"""
-The MLP class represents a Multi-Layer Perceptron, and the methods required to train it.
-"""
+
 class MLP:
+    """
+    The MLP class represents a Multi-Layer Perceptron, and the methods required to train it.
+    """
 
     def __init__(self, layers):
         self.layers = layers
@@ -65,6 +67,7 @@ class MLP:
         return error
 
     def gradientDescent(self, p):
+        alpha=0.9
         for i in range(len(self.layers)):
             #print("i:",i)
             if i<len(self.layers)-1:
@@ -73,10 +76,14 @@ class MLP:
                     deltas.append(self.layers[i+1][j].delta) #get deltas of next layer's perceptrons
             for perceptron in self.layers[i]:
                 if i<len(self.layers)-1:
-                    weight_change = [x*p for x in deltas]
-                    weight_change = [x*perceptron.output for x in weight_change]
-                    perceptron.weights += weight_change
+                    new_weights = [x*p for x in deltas]
+                    new_weights = [x*perceptron.output for x in new_weights]
+                    weight_change = np.subtract(new_weights,perceptron.weights)
+                    weight_change = [alpha*x for x in weight_change]
+                    new_weights = np.add(new_weights,weight_change)
+                    perceptron.weights += new_weights
                 perceptron.bias += p*perceptron.delta #update bias using wi,j = wi,j + p*δj*ui
+                    
             
     def sigmoid(self, x):
         y = 1.0 / (1 + np.exp(-x))
