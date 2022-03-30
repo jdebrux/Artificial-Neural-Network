@@ -26,7 +26,7 @@ class MLP:
     def __init__(self, layers):
         self.layers = layers
 
-    def forwardProp(self):
+    def forwardProp(self, current_epoch):
         output = []
         for i, layer in enumerate(self.layers): #loop through each layer in the MLP
             #store the inputs for a given layer as the outputs of the previous layer
@@ -42,9 +42,8 @@ class MLP:
                     #loop through each set of previous weights and find the weights correlating to the current perceptron
                     for ar in prev_weights: 
                         incoming_weights.append(ar[j])
-                    #print("Perceptron Inputs",perceptron.inputs,"j:",j," i:",i)
                     s = sum(np.multiply(perceptron.inputs, incoming_weights)) + perceptron.bias #weights . inputs + bias 
-                    new_activation = self.sigmoid(s) #apply the sigmoid function
+                    new_activation = self.annealing(0.1,0.01,1000,current_epoch) #apply the sigmoid function
                     perceptron.output = new_activation
                     output.append(new_activation)
             else:
@@ -88,7 +87,7 @@ class MLP:
             errors=[]
             for i, row in enumerate(dataset):  #loop through every row in the data set
                 correct = row[4] #define correct value as the value for Skelton on the proceeding day
-                prediction = self.forwardProp() #perform forward propogation of the network
+                prediction = self.forwardProp(epoch) #perform forward propogation of the network
                 error = self.backwardProp(correct)  #perform backward propogation on the network
                 errors.append(error)
                 if i==len(dataset)-1:
@@ -106,7 +105,7 @@ class MLP:
         correct_values=[]
         for i, row in enumerate(dataset):
             correct_values.append(row[4])
-            predictions.append(self.forwardProp())
+            predictions.append(self.forwardProp(1))
             if i != len(dataset)-1:
                 new_inputs = dataset[i+1]
             for j, perceptron in enumerate(self.layers[0]): #define inputs for each
@@ -116,7 +115,10 @@ class MLP:
         plt.legend(["Predictions","Correct Values"])
         plt.title("Actual vs Modelled Values for Skelton Mean Daily Flow")
         plt.show()
-        
+
+    def annealing(self, p, q, r, x):
+        return p + ((q - p) *(1.0 - (1.0 / (1.0 + np.exp(10-(20*x/r))))))
+      
     def rmse(self, errors):
         return np.sqrt(sum(errors)/len(errors))    
         
