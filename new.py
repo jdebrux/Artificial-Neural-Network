@@ -77,7 +77,6 @@ class MLP:
                     weight_change = [x*perceptron.output for x in weight_change]
                     perceptron.weights += weight_change
                 perceptron.bias += p*perceptron.delta #update bias using wi,j = wi,j + p*δj*ui
-                    
             
     def sigmoid(self, x):
         y = 1.0 / (1 + np.exp(-x))
@@ -151,7 +150,7 @@ if __name__ == "__main__":
     
     # create network
     mlp = MLP([input_layer, hidden_layer, output_layer])
-    epochs=10
+    epochs=1000
     p=0.01
     #train
     train_errors = mlp.train(train_data,epochs,p)
@@ -167,6 +166,6 @@ if __name__ == "__main__":
     plt.title("RMSE Errors for Test Data")
     plt.xlabel("Number of Epochs (n)")
     plt.ylabel("RMSE Error")
-    plt.show()
+    plt.show() 
     
     mlp.predict(validation_data)
