@@ -15,7 +15,7 @@ class Perceptron:
         self.inputs = inputs
         self.weights = np.random.rand(nOut)
         self.bias = np.random.rand()
-        self.output = 0.0
+        self.output = 0 .0
         self.delta = 0.0
         self.db = 0.0
 """
